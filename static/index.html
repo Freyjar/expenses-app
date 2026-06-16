@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Add Expense</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+  <h1>💸 Add Expense</h1>
+  <div style="display:flex;gap:8px">
+    <a href="/dashboard" style="color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">Dashboard →</a>
+    <button class="add-btn" style="font-size:0.8rem;padding:6px 12px;background:#2a2a2a;color:#aaa" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="input-box">
+  <div class="row">
+    <input type="number" id="amount" placeholder="Amount (₱)" step="0.01" min="0" style="flex:1" />
+    <input type="text" id="merchant" placeholder="Where / Who" style="flex:2" />
+  </div>
+  <div class="cat-pills" id="categoryPills"></div>
+  <div class="row">
+    <input type="text" id="note" placeholder="Note (optional)" style="flex:2" />
+    <input type="date" id="expenseDate" style="flex:1" />
+    <button class="add-btn" id="addBtn" onclick="addExpense()">Add</button>
+  </div>
+  <div class="status" id="status"></div>
+</div>
+
+<script src="/static/app.js"></script>
+<script>
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+</script>
+</body>
+</html>

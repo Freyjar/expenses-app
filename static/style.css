@@ -1,0 +1,35 @@
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: system-ui, sans-serif; background: #0f0f0f; color: #e0e0e0; min-height: 100vh; padding: 1rem; max-width: 600px; margin: 0 auto; }
+h1 { font-size: 1.4rem; font-weight: 600; margin-bottom: 1.5rem; color: #fff; }
+.input-box { background: #1a1a1a; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 10px; }
+.row { display: flex; gap: 8px; }
+input, select { background: #2a2a2a; border: 1px solid #333; border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 0.95rem; outline: none; width: 100%; }
+input:focus, select:focus { border-color: #555; }
+select option { background: #2a2a2a; }
+button.add-btn { background: #fff; color: #000; border: none; border-radius: 8px; padding: 10px 20px; font-weight: 600; cursor: pointer; font-size: 0.95rem; white-space: nowrap; }
+button.add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.status { font-size: 0.85rem; min-height: 20px; }
+.status.ok { color: #22c55e; }
+.status.err { color: #ef4444; }
+.cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 1.5rem; }
+.card { background: #1a1a1a; border-radius: 12px; padding: 1rem; }
+.card-label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+.card-value { font-size: 1.3rem; font-weight: 600; color: #fff; }
+.chart-box { background: #1a1a1a; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; }
+.chart-box h2 { font-size: 0.9rem; color: #888; margin-bottom: 1rem; }
+.list-box { background: #1a1a1a; border-radius: 12px; padding: 1rem; }
+.list-box h2 { font-size: 0.9rem; color: #888; margin-bottom: 1rem; }
+.expense-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #222; }
+.expense-item:last-child { border-bottom: none; }
+.expense-left { display: flex; flex-direction: column; gap: 2px; }
+.expense-merchant { font-size: 0.95rem; color: #fff; }
+.expense-meta { font-size: 0.75rem; color: #666; }
+.expense-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.expense-amount { font-size: 1rem; font-weight: 600; color: #fff; }
+.badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 500; }
+.del-btn { background: none; border: none; color: #444; cursor: pointer; font-size: 1rem; padding: 4px; }
+.del-btn:hover { color: #ef4444; }
+.loading { text-align: center; color: #444; padding: 2rem; }
+.cat-pills { display: flex; flex-wrap: wrap; gap: 6px; }
+.cat-pill { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1.5px solid #333; background: #2a2a2a; color: #aaa; transition: all 0.15s; }
+.cat-pill.selected { border-color: currentColor; color: #fff; }
