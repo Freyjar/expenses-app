@@ -11,30 +11,46 @@
 
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
   <h1>📊 Dashboard</h1>
-  <div style="display:flex;gap:8px">
-    <a href="/" style="color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">← Add</a>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <a href="/" style="color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">+ Add</a>
+    <a href="/debts" style="color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">💸 Debts</a>
+    <a href="/calculator" style="color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">🧮 Calc</a>
     <button class="add-btn" style="font-size:0.8rem;padding:6px 12px;background:#2a2a2a;color:#aaa" onclick="logout()">Logout</button>
   </div>
 </div>
 
-<div class="cards">
+<div class="cards" style="grid-template-columns:repeat(2,1fr)">
   <div class="card">
     <div class="card-label">This month</div>
     <div class="card-value" id="monthTotal">₱0</div>
   </div>
   <div class="card">
-    <div class="card-label">Top category</div>
-    <div class="card-value" id="topCategory">—</div>
+    <div class="card-label">Last month</div>
+    <div class="card-value" id="lastMonth">₱0</div>
   </div>
   <div class="card">
-    <div class="card-label">Entries</div>
-    <div class="card-value" id="txCount">0</div>
+    <div class="card-label">Weekly avg</div>
+    <div class="card-value" id="weeklyAvg">₱0</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Top category</div>
+    <div class="card-value" id="topCategory">—</div>
   </div>
 </div>
 
 <div class="chart-box">
   <h2>This month by category</h2>
   <canvas id="categoryChart" height="160"></canvas>
+</div>
+
+<div class="chart-box">
+  <h2>Daily spending this month</h2>
+  <canvas id="dailyChart" height="160"></canvas>
+</div>
+
+<div class="chart-box">
+  <h2>This month vs last month</h2>
+  <canvas id="compareChart" height="120"></canvas>
 </div>
 
 <div class="list-box">

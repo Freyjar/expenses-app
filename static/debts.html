@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Debts</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+  <h1>💸 Debts</h1>
+  <div style="display:flex;gap:8px">
+    <a href="/dashboard" style="color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">← Dashboard</a>
+    <button class="add-btn" style="font-size:0.8rem;padding:6px 12px;background:#2a2a2a;color:#aaa" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="input-box">
+  <div class="row">
+    <input type="text" id="person" placeholder="Who borrowed from you?" style="flex:2" />
+    <input type="number" id="debtAmount" placeholder="Amount (₱)" step="0.01" min="0" style="flex:1" />
+  </div>
+  <div class="row">
+    <input type="text" id="debtNote" placeholder="Note (optional)" style="flex:2" />
+    <input type="date" id="debtDate" style="flex:1" />
+    <button class="add-btn" onclick="addDebt()">Add</button>
+  </div>
+  <div class="status" id="status"></div>
+</div>
+
+<div class="cards" style="grid-template-columns:repeat(2,1fr)">
+  <div class="card">
+    <div class="card-label">Total outstanding</div>
+    <div class="card-value" id="totalOwed">₱0</div>
+  </div>
+  <div class="card">
+    <div class="card-label">Total debtors</div>
+    <div class="card-value" id="totalDebtors">0</div>
+  </div>
+</div>
+
+<div class="list-box" style="margin-top:1.5rem">
+  <h2>Outstanding</h2>
+  <div id="unpaidList"><div class="loading">Loading...</div></div>
+</div>
+
+<div class="list-box" style="margin-top:1.5rem">
+  <h2>Paid</h2>
+  <div id="paidList"><div class="loading">Loading...</div></div>
+</div>
+
+<script>
+async function checkAuth() {
+  const res = await fetch('/api/me');
+  if (res.status === 401) window.location.href = '/login';
+}
+checkAuth();
+
+document.getElementById('debtDate').value = new Date().toISOString().split('T')[0];
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+async function addDebt() {
+  const person = document.getElementById('person').value.trim();
+  const amount = parseFloat(document.getElementById('debtAmount').value);
+  const note = document.getElementById('debtNote').value.trim();
+  const date = document.getElementById('debtDate').value;
+  const status = document.getElementById('status');
+
+  if (!person || !amount || !date) {
+    status.className = 'status err';
+    status.textContent = '❌ Please fill in person, amount and date.';
+    return;
+  }
+
+  await fetch('/api/debts', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ person, amount, note, date })
+  });
+
+  status.className = 'status ok';
+  status.textContent = `✅ ₱${amount} lent to ${person} recorded!`;
+  document.getElementById('person').value = '';
+  document.getElementById('debtAmount').value = '';
+  document.getElementById('debtNote').value = '';
+  document.getElementById('debtDate').value = new Date().toISOString().split('T')[0];
+  loadDebts();
+}
+
+async function updateDebt(id, originalAmount) {
+  const newAmount = prompt(`Remaining amount (original: ₱${originalAmount}). Enter 0 if fully paid:`);
+  if (newAmount === null) return;
+  await fetch(`/api/debts/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ amount: parseFloat(newAmount) })
+  });
+  loadDebts();
+}
+
+async function deleteDebt(id) {
+  if (!confirm('Delete this debt record?')) return;
+  await fetch(`/api/debts/${id}`, { method: 'DELETE' });
+  loadDebts();
+}
+
+async function loadDebts() {
+  const debts = await fetch('/api/debts').then(r => r.json());
+
+  const unpaid = debts.filter(d => d.status === 'unpaid');
+  const paid = debts.filter(d => d.status === 'paid');
+
+  const totalOwed = unpaid.reduce((sum, d) => sum + parseFloat(d.amount), 0);
+  document.getElementById('totalOwed').textContent = '₱' + totalOwed.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+  document.getElementById('totalDebtors').textContent = unpaid.length;
+
+  const renderDebt = (d) => `
+    <div class="expense-item">
+      <div class="expense-left">
+        <span class="expense-merchant">${d.person}</span>
+        <span class="expense-meta">${d.date}${d.note ? ' · ' + d.note : ''} · original: ₱${Number(d.original_amount).toLocaleString()}</span>
+      </div>
+      <div class="expense-right">
+        <span class="expense-amount" style="color:${d.status === 'paid' ? '#22c55e' : '#f97316'}">
+          ₱${Number(d.amount).toLocaleString()}
+        </span>
+        ${d.status === 'unpaid' ? `<button class="del-btn" onclick="updateDebt(${d.id}, ${d.original_amount})" title="Update payment">✎</button>` : ''}
+        <button class="del-btn" onclick="deleteDebt(${d.id})">✕</button>
+      </div>
+    </div>
+  `;
+
+  const unpaidList = document.getElementById('unpaidList');
+  unpaidList.innerHTML = unpaid.length === 0
+    ? '<div class="loading">No outstanding debts 🎉</div>'
+    : unpaid.map(renderDebt).join('');
+
+  const paidList = document.getElementById('paidList');
+  paidList.innerHTML = paid.length === 0
+    ? '<div class="loading">No paid debts yet.</div>'
+    : paid.map(renderDebt).join('');
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') addDebt(); });
+loadDebts();
+</script>
+</body>
+</html>

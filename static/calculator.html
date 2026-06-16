@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculator</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <style>
+    .calc-box { background: #1a1a1a; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; display: flex; flex-direction: column; gap: 10px; }
+    .result { background: #2a2a2a; border-radius: 8px; padding: 12px 14px; font-size: 0.95rem; color: #fff; }
+    .result-row { display: flex; justify-content: space-between; padding: 4px 0; }
+    .result-label { color: #888; }
+    .result-value { font-weight: 600; color: #22c55e; }
+    h2 { font-size: 1rem; color: #aaa; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+  <h1>🧮 Calculator</h1>
+  <a href="/dashboard" style="color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">← Dashboard</a>
+</div>
+
+<div class="calc-box">
+  <h2>Tip Calculator</h2>
+  <div class="row">
+    <input type="number" id="tipBill" placeholder="Bill amount (₱)" step="0.01" min="0" oninput="calcTip()" />
+    <input type="number" id="tipPercent" placeholder="Tip %" value="10" min="0" oninput="calcTip()" />
+    <input type="number" id="tipPeople" placeholder="People" value="1" min="1" oninput="calcTip()" />
+  </div>
+  <div class="result" id="tipResult">
+    <div class="result-row"><span class="result-label">Tip amount</span><span class="result-value" id="tipAmount">₱0.00</span></div>
+    <div class="result-row"><span class="result-label">Total bill</span><span class="result-value" id="tipTotal">₱0.00</span></div>
+    <div class="result-row"><span class="result-label">Per person</span><span class="result-value" id="tipPerPerson">₱0.00</span></div>
+  </div>
+</div>
+
+<div class="calc-box">
+  <h2>Split Bill</h2>
+  <div class="row">
+    <input type="number" id="splitBill" placeholder="Total bill (₱)" step="0.01" min="0" oninput="calcSplit()" />
+    <input type="number" id="splitPeople" placeholder="Number of people" min="1" value="2" oninput="calcSplit()" />
+  </div>
+  <div class="result">
+    <div class="result-row"><span class="result-label">Each person pays</span><span class="result-value" id="splitPerPerson">₱0.00</span></div>
+  </div>
+</div>
+
+<script>
+function fmt(n) {
+  return '₱' + Number(n).toLocaleString('en-PH', { minimumFractionDigits: 2 });
+}
+
+function calcTip() {
+  const bill = parseFloat(document.getElementById('tipBill').value) || 0;
+  const pct = parseFloat(document.getElementById('tipPercent').value) || 0;
+  const people = parseInt(document.getElementById('tipPeople').value) || 1;
+  const tip = bill * (pct / 100);
+  const total = bill + tip;
+  document.getElementById('tipAmount').textContent = fmt(tip);
+  document.getElementById('tipTotal').textContent = fmt(total);
+  document.getElementById('tipPerPerson').textContent = fmt(total / people);
+}
+
+function calcSplit() {
+  const bill = parseFloat(document.getElementById('splitBill').value) || 0;
+  const people = parseInt(document.getElementById('splitPeople').value) || 1;
+  document.getElementById('splitPerPerson').textContent = fmt(bill / people);
+}
+</script>
+</body>
+</html>
