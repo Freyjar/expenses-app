@@ -90,6 +90,7 @@ class DebtInput(BaseModel):
     amount: float
     note: str | None = None
     date: str
+    type: str = 'lent'
 
 class DebtUpdate(BaseModel):
     amount:float
@@ -101,7 +102,6 @@ class ExpenseInput(BaseModel):
     category: str
     note: str | None = None
     date: str
-    type: str = 'lent'
 
 class NoteUpdate(BaseModel):
     note: str
@@ -110,10 +110,11 @@ class NoteUpdate(BaseModel):
 async def add_debt(input: DebtInput, user_id: int = Depends(get_current_user)):
     conn = get_db()
     cur = conn.cursor()
-cur.execute("""
+    cur.execute("""
         INSERT INTO debts (person, amount, original_amount, note, date, type)
         VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
-    """, (input.person, input.amount, input.amount, input.note or "", input.date, input.type))    debt_id = cur.fetchone()[0]
+    """, (input.person, input.amount, input.amount, input.note or "", input.date, input.type))
+    debt_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
     conn.close()
@@ -134,10 +135,14 @@ async def update_debt(debt_id: int, body: DebtUpdate, user_id: int = Depends(get
     conn = get_db()
     cur = conn.cursor()
     status = 'paid' if body.amount <= 0 else 'unpaid'
-    paid_at = 'NOW()' if status == 'paid' else 'NULL'
-    cur.execute(f"""
-        UPDATE debts SET amount=%s, status=%s, paid_at={paid_at} WHERE id=%s
-    """, (max(0, body.amount), debt_id))
+    if status == 'paid':
+        cur.execute("""
+            UPDATE debts SET amount=%s, status=%s, paid_at=NOW() WHERE id=%s
+        """, (0, status, debt_id))
+    else:
+        cur.execute("""
+            UPDATE debts SET amount=%s, status=%s, paid_at=NULL WHERE id=%s
+        """, (max(0, body.amount), status, debt_id))
     conn.commit()
     cur.close()
     conn.close()
@@ -180,19 +185,31 @@ async def get_stats(user_id: int = Depends(get_current_user)):
     """)
     weekly_avg = cur.fetchone()
 
-    # Last month total
+# Last month total
     cur.execute("""
-        SELECT SUM(amount) as total FROM expenses
-        WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
-        AND status = 'done'
+        SELECT 
+            (SELECT COALESCE(SUM(amount), 0) FROM expenses
+             WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+             AND status = 'done')
+            +
+            (SELECT COALESCE(SUM(original_amount), 0) FROM debts
+             WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE - INTERVAL '1 month')
+             AND type = 'owe')
+        AS total
     """)
     last_month = cur.fetchone()
 
     # This month total
     cur.execute("""
-        SELECT SUM(amount) as total FROM expenses
-        WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
-        AND status = 'done'
+        SELECT 
+            (SELECT COALESCE(SUM(amount), 0) FROM expenses
+             WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
+             AND status = 'done')
+            +
+            (SELECT COALESCE(SUM(original_amount), 0) FROM debts
+             WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
+             AND type = 'owe')
+        AS total
     """)
     this_month = cur.fetchone()
 
@@ -264,11 +281,17 @@ async def get_summary(user_id: int = Depends(get_current_user)):
         GROUP BY category ORDER BY total DESC
     """)
     by_category = cur.fetchall()
+
     cur.execute("""
-        SELECT SUM(amount) as total
-        FROM expenses
-        WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
-        AND status = 'done'
+        SELECT 
+            (SELECT COALESCE(SUM(amount), 0) FROM expenses
+             WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
+             AND status = 'done')
+            +
+            (SELECT COALESCE(SUM(original_amount), 0) FROM debts
+             WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
+             AND type = 'owe')
+        AS total
     """)
     monthly_total = cur.fetchone()
     cur.close()
@@ -296,22 +319,15 @@ async def delete_expense(expense_id: int, user_id: int = Depends(get_current_use
     return {"deleted": expense_id}
 
 # --- Static pages ---
-#@app.get("/")
-#async def index(request: Request):
-#    token = request.cookies.get("session")
-#    if not token:
-#        return RedirectResponse("/login")
-#    return FileResponse("static/index.html")
-#
-#@app.get("/dashboard")
-#async def dashboard(request: Request):
-#    token = request.cookies.get("session")
-#    if not token:
-#        return RedirectResponse("/login")
-#    return FileResponse("static/dashboard.html")
-#
-#@app.get("/login")
-#async def login_page():
-#    return FileResponse("static/login.html")
-#
+@app.get("/")
+async def index(request: Request):
+    token = request.cookies.get("session")
+    if not token:
+        return RedirectResponse("/login")
+    return FileResponse("static/index.html")
+
+@app.get("/login")
+async def login_page():
+    return FileResponse("static/login.html")
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
