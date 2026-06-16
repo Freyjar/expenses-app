@@ -33,3 +33,8 @@ button.add-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 .cat-pills { display: flex; flex-wrap: wrap; gap: 6px; }
 .cat-pill { padding: 6px 14px; border-radius: 20px; font-size: 12px; font-weight: 500; cursor: pointer; border: 1.5px solid #333; background: #2a2a2a; color: #aaa; transition: all 0.15s; }
 .cat-pill.selected { border-color: currentColor; color: #fff; }
+.date-group { margin-bottom: 4px; }
+.date-header { display: flex; justify-content: space-between; align-items: center; padding: 8px 4px; cursor: pointer; border-radius: 8px; font-size: 0.85rem; font-weight: 500; color: #aaa; user-select: none; }
+.date-header:hover { background: #222; }
+.toggle-icon { font-size: 0.75rem; color: #555; }
+.date-items { padding-left: 4px; }

@@ -260,10 +260,30 @@ async def add_expense(input: ExpenseInput, user_id: int = Depends(get_current_us
             "category": input.category, "note": input.note, "date": input.date}
 
 @app.get("/api/expenses")
-async def get_expenses(limit: int = 50, user_id: int = Depends(get_current_user)):
+async def get_expenses(
+    limit: int = 100,
+    category: str | None = None,
+    search: str | None = None,
+    user_id: int = Depends(get_current_user)
+):
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("SELECT * FROM expenses WHERE status='done' ORDER BY date DESC, created_at DESC LIMIT %s", (limit,))
+
+    query = "SELECT * FROM expenses WHERE status='done'"
+    params = []
+
+    if category:
+        query += " AND category = %s"
+        params.append(category)
+    if search:
+        query += " AND (LOWER(merchant) LIKE %s OR LOWER(note) LIKE %s)"
+        params.append(f"%{search.lower()}%")
+        params.append(f"%{search.lower()}%")
+
+    query += " ORDER BY date DESC, created_at DESC LIMIT %s"
+    params.append(limit)
+
+    cur.execute(query, params)
     rows = cur.fetchall()
     cur.close()
     conn.close()

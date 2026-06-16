@@ -54,7 +54,28 @@
 </div>
 
 <div class="list-box">
-  <h2>Recent expenses</h2>
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px">
+    <h2 style="margin:0">Recent expenses</h2>
+    <span style="font-size:0.8rem;color:#555" id="expenseCount"></span>
+  </div>
+
+  <!-- Search -->
+  <input type="text" id="searchInput" placeholder="🔍 Search merchant or note..." 
+    style="width:100%;margin-bottom:10px;background:#2a2a2a;border:1px solid #333;border-radius:8px;padding:8px 14px;color:#fff;font-size:0.9rem;outline:none"
+    oninput="filterExpenses()" />
+
+  <!-- Category filter pills -->
+  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px" id="filterPills">
+    <span class="cat-pill selected" style="color:#fff;border-color:#fff" data-cat="" onclick="selectFilter(this, '')">All</span>
+    <span class="cat-pill" style="color:#f97316" data-cat="food" onclick="selectFilter(this, 'food')">food</span>
+    <span class="cat-pill" style="color:#3b82f6" data-cat="transport" onclick="selectFilter(this, 'transport')">transport</span>
+    <span class="cat-pill" style="color:#8b5cf6" data-cat="utilities" onclick="selectFilter(this, 'utilities')">utilities</span>
+    <span class="cat-pill" style="color:#ec4899" data-cat="shopping" onclick="selectFilter(this, 'shopping')">shopping</span>
+    <span class="cat-pill" style="color:#22c55e" data-cat="health" onclick="selectFilter(this, 'health')">health</span>
+    <span class="cat-pill" style="color:#eab308" data-cat="entertainment" onclick="selectFilter(this, 'entertainment')">entertainment</span>
+    <span class="cat-pill" style="color:#888" data-cat="other" onclick="selectFilter(this, 'other')">other</span>
+  </div>
+
   <div id="expenseList"><div class="loading">Loading...</div></div>
 </div>
 

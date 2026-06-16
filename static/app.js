@@ -7,6 +7,8 @@ let selectedCategory = 'food';
 let chartInstance = null;
 let dailyChart = null;
 let compareChart = null;
+let activeCategory = '';
+let allExpenses = [];
 
 async function checkAuth() {
   const res = await fetch('/api/me');
@@ -86,6 +88,104 @@ async function editNote(id, currentNote) {
   loadData();
 }
 
+function selectFilter(el, cat) {
+  activeCategory = cat;
+  document.querySelectorAll('#filterPills .cat-pill').forEach(p => {
+    p.classList.remove('selected');
+    p.style.borderColor = '#333';
+    p.style.color = p.dataset.cat ? COLORS[p.dataset.cat] : '#aaa';
+  });
+  el.classList.add('selected');
+  el.style.borderColor = cat ? COLORS[cat] : '#fff';
+  el.style.color = '#fff';
+  renderExpenses();
+}
+
+function filterExpenses() {
+  renderExpenses();
+}
+
+function renderExpenses() {
+  const search = (document.getElementById('searchInput')?.value || '').toLowerCase();
+  const list = document.getElementById('expenseList');
+  if (!list) return;
+
+  let filtered = allExpenses;
+
+  if (activeCategory) {
+    filtered = filtered.filter(e => e.category === activeCategory);
+  }
+  if (search) {
+    filtered = filtered.filter(e =>
+      (e.merchant || '').toLowerCase().includes(search) ||
+      (e.note || '').toLowerCase().includes(search)
+    );
+  }
+
+  document.getElementById('expenseCount').textContent = `${filtered.length} entries`;
+
+  if (filtered.length === 0) {
+    list.innerHTML = '<div class="loading">No matching expenses.</div>';
+    return;
+  }
+
+  // Group by date
+  const grouped = {};
+  filtered.forEach(e => {
+    const day = e.date;
+    if (!grouped[day]) grouped[day] = [];
+    grouped[day].push(e);
+  });
+
+  list.innerHTML = Object.keys(grouped).sort((a,b) => b.localeCompare(a)).map(day => {
+    const dayTotal = grouped[day].reduce((sum, e) => sum + parseFloat(e.amount), 0);
+    const items = grouped[day].map(e => `
+      <div class="expense-item">
+        <div class="expense-left">
+          <span class="expense-merchant">${e.merchant}</span>
+          <span class="expense-meta">${e.note || ''}</span>
+        </div>
+        <div class="expense-right">
+          <span class="badge" style="background:${COLORS[e.category]}22;color:${COLORS[e.category]}">${e.category}</span>
+          <span class="expense-amount">₱${Number(e.amount).toLocaleString()}</span>
+          <button class="del-btn" onclick="editNote(${e.id}, '${(e.note||'').replace(/'/g, "\\'")}')" title="Edit note">✎</button>
+          <button class="del-btn" onclick="deleteExpense(${e.id})">✕</button>
+        </div>
+      </div>
+    `).join('');
+
+    return `
+      <div class="date-group">
+        <div class="date-header" onclick="toggleDateGroup(this)">
+          <span>${formatDate(day)}</span>
+          <span style="display:flex;align-items:center;gap:8px">
+            <span style="color:#888;font-size:0.85rem">₱${Number(dayTotal).toLocaleString()}</span>
+            <span class="toggle-icon">▾</span>
+          </span>
+        </div>
+        <div class="date-items">${items}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleDateGroup(header) {
+  const items = header.nextElementSibling;
+  const icon = header.querySelector('.toggle-icon');
+  if (items.style.display === 'none') {
+    items.style.display = 'block';
+    icon.textContent = '▾';
+  } else {
+    items.style.display = 'none';
+    icon.textContent = '▸';
+  }
+}
+
+function formatDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return d.toLocaleDateString('en-PH', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+}
+
 async function loadData() {
   const [expenses, summary, stats] = await Promise.all([
     fetch('/api/expenses').then(r => r.json()),
@@ -163,27 +263,10 @@ async function loadData() {
   }
 
   // Expense list
-  const list = document.getElementById('expenseList');
-  if (!list) return;
-  if (expenses.length === 0) {
-    list.innerHTML = '<div class="loading">No expenses yet.</div>';
-    return;
-  }
-  list.innerHTML = expenses.map(e => `
-    <div class="expense-item">
-      <div class="expense-left">
-        <span class="expense-merchant">${e.merchant}</span>
-        <span class="expense-meta">${e.date}${e.note ? ' · ' + e.note : ''}</span>
-      </div>
-      <div class="expense-right">
-        <span class="badge" style="background:${COLORS[e.category]}22;color:${COLORS[e.category]}">${e.category}</span>
-        <span class="expense-amount">₱${Number(e.amount).toLocaleString()}</span>
-        <button class="del-btn" onclick="editNote(${e.id}, '${(e.note||'').replace(/'/g, "\\'")}')" title="Edit note">✎</button>
-        <button class="del-btn" onclick="deleteExpense(${e.id})">✕</button>
-      </div>
-    </div>
-  `).join('');
-}
+if (document.getElementById('expenseList')) {
+    allExpenses = expenses;
+    renderExpenses();
+  }}
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter' && document.getElementById('addBtn')) addExpense();
