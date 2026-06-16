@@ -59,8 +59,10 @@ async function addExpense() {
     document.getElementById('amount').value = '';
     document.getElementById('merchant').value = '';
     document.getElementById('note').value = '';
-    document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
-  } catch (e) {
+//    document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
+const dateEl = document.getElementById('expenseDate');
+if (dateEl) dateEl.value = new Date().toISOString().split('T')[0]; 
+} catch (e) {
     status.className = 'status err';
     status.textContent = '❌ Failed to save. Try again.';
   }
