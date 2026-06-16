@@ -101,6 +101,7 @@ class ExpenseInput(BaseModel):
     category: str
     note: str | None = None
     date: str
+    type: str = 'lent'
 
 class NoteUpdate(BaseModel):
     note: str
@@ -109,11 +110,10 @@ class NoteUpdate(BaseModel):
 async def add_debt(input: DebtInput, user_id: int = Depends(get_current_user)):
     conn = get_db()
     cur = conn.cursor()
-    cur.execute("""
-        INSERT INTO debts (person, amount, original_amount, note, date)
-        VALUES (%s, %s, %s, %s, %s) RETURNING id
-    """, (input.person, input.amount, input.amount, input.note or "", input.date))
-    debt_id = cur.fetchone()[0]
+cur.execute("""
+        INSERT INTO debts (person, amount, original_amount, note, date, type)
+        VALUES (%s, %s, %s, %s, %s, %s) RETURNING id
+    """, (input.person, input.amount, input.amount, input.note or "", input.date, input.type))    debt_id = cur.fetchone()[0]
     conn.commit()
     cur.close()
     conn.close()
