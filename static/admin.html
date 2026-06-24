@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
+  <h1>⚙️ Admin</h1>
+  <div style="display:flex;gap:8px">
+    <a href="/dashboard" style="color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">← Dashboard</a>
+    <button class="add-btn" style="font-size:0.8rem;padding:6px 12px;background:#2a2a2a;color:#aaa" onclick="logout()">Logout</button>
+  </div>
+</div>
+
+<div class="input-box">
+  <h2 style="font-size:0.95rem;color:#aaa;margin-bottom:0.5rem">Create new user</h2>
+  <div class="row">
+    <input type="text" id="newUsername" placeholder="Username" style="flex:2" />
+    <input type="password" id="newPassword" placeholder="Password" style="flex:2" />
+  </div>
+  <div style="display:flex;align-items:center;gap:10px">
+    <label style="display:flex;align-items:center;gap:6px;color:#aaa;font-size:0.9rem;cursor:pointer">
+      <input type="checkbox" id="isAdmin" style="width:auto" /> Admin
+    </label>
+    <button class="add-btn" onclick="createUser()">Create</button>
+  </div>
+  <div class="status" id="status"></div>
+</div>
+
+<div class="list-box" style="margin-top:1.5rem">
+  <h2>Users</h2>
+  <div id="userList"><div class="loading">Loading...</div></div>
+</div>
+
+<script>
+async function checkAuth() {
+  const res = await fetch('/api/me');
+  if (res.status === 401) { window.location.href = '/login'; return; }
+  const data = await res.json();
+  if (!data.is_admin) window.location.href = '/dashboard';
+}
+checkAuth();
+
+async function logout() {
+  await fetch('/api/logout', { method: 'POST' });
+  window.location.href = '/login';
+}
+
+async function createUser() {
+  const username = document.getElementById('newUsername').value.trim();
+  const password = document.getElementById('newPassword').value;
+  const is_admin = document.getElementById('isAdmin').checked;
+  const status = document.getElementById('status');
+
+  if (!username || !password) {
+    status.className = 'status err';
+    status.textContent = '❌ Fill in both fields.';
+    return;
+  }
+
+  const res = await fetch('/api/admin/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, is_admin })
+  });
+
+  if (res.ok) {
+    status.className = 'status ok';
+    status.textContent = `✅ User "${username}" created!`;
+    document.getElementById('newUsername').value = '';
+    document.getElementById('newPassword').value = '';
+    document.getElementById('isAdmin').checked = false;
+    loadUsers();
+  } else {
+    const data = await res.json();
+    status.className = 'status err';
+    status.textContent = `❌ ${data.detail}`;
+  }
+}
+
+async function deleteUser(id, username) {
+  if (!confirm(`Delete user "${username}"? This will delete all their data.`)) return;
+  await fetch(`/api/admin/users/${id}`, { method: 'DELETE' });
+  loadUsers();
+}
+
+async function loadUsers() {
+  const users = await fetch('/api/admin/users').then(r => r.json());
+  const list = document.getElementById('userList');
+  list.innerHTML = users.map(u => `
+    <div class="expense-item">
+      <div class="expense-left">
+        <span class="expense-merchant">${u.username}</span>
+        <span class="expense-meta">joined ${u.created_at?.split('T')[0] || ''}</span>
+      </div>
+      <div class="expense-right">
+        ${u.is_admin ? '<span class="badge" style="background:#8b5cf622;color:#8b5cf6">admin</span>' : ''}
+        <button class="del-btn" onclick="deleteUser(${u.id}, '${u.username}')">✕</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+loadUsers();
+</script>
+</body>
+</html>

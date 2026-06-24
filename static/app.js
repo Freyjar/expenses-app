@@ -12,7 +12,11 @@ let allExpenses = [];
 
 async function checkAuth() {
   const res = await fetch('/api/me');
-  if (res.status === 401) window.location.href = '/login';
+  if (res.status === 401) { window.location.href = '/login'; return; }
+  const data = await res.json();
+  if (data.is_admin && document.getElementById('adminLink')) {
+    document.getElementById('adminLink').style.display = 'inline-block';
+  }
 }
 checkAuth();
 
@@ -61,13 +65,12 @@ async function addExpense() {
     document.getElementById('amount').value = '';
     document.getElementById('merchant').value = '';
     document.getElementById('note').value = '';
-//    document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
-const dateEl = document.getElementById('expenseDate');
-if (dateEl) dateEl.value = new Date().toISOString().split('T')[0]; 
-} catch (e) {
+    const dateEl = document.getElementById('expenseDate');
+    if (dateEl) dateEl.value = new Date().toISOString().split('T')[0];
+    } catch (e) {
     status.className = 'status err';
     status.textContent = '❌ Failed to save. Try again.';
-  }
+    }
 
   document.getElementById('addBtn').disabled = false;
 }
