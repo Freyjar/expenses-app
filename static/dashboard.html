@@ -6,81 +6,283 @@
   <title>Dashboard</title>
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <link rel="stylesheet" href="/static/style.css">
+  <style>
+    body { padding: 0; }
+
+    /* Sidebar layout */
+    .layout { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 220px;
+      min-width: 220px;
+      background: #111;
+      padding: 1.5rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      border-right: 1px solid #1f1f1f;
+      position: fixed;
+      top: 0; left: 0; bottom: 0;
+      overflow-y: auto;
+    }
+
+    .sidebar-logo {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 1.5rem;
+      padding: 0 0.5rem;
+    }
+
+    .sidebar-user {
+      font-size: 0.8rem;
+      color: #555;
+      padding: 0 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .nav-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      color: #888;
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: all 0.15s;
+      cursor: pointer;
+      border: none;
+      background: none;
+      width: 100%;
+      text-align: left;
+    }
+    .nav-link:hover { background: #1a1a1a; color: #fff; }
+    .nav-link.active { background: #1a1a1a; color: #fff; }
+    .nav-link .icon { font-size: 1rem; width: 20px; text-align: center; }
+
+    .sidebar-divider { height: 1px; background: #1f1f1f; margin: 8px 0; }
+
+    .sidebar-bottom { margin-top: auto; }
+
+    .main {
+      margin-left: 220px;
+      padding: 1.5rem;
+      flex: 1;
+      max-width: 1200px;
+    }
+
+    /* Time range pills */
+    .range-row {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .range-pill {
+      padding: 5px 14px;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1.5px solid #333;
+      background: #1a1a1a;
+      color: #888;
+      transition: all 0.15s;
+    }
+    .range-pill.active { border-color: #fff; color: #fff; }
+    .range-custom {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+    }
+    .range-custom input {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 5px 10px;
+      color: #fff;
+      font-size: 0.8rem;
+      outline: none;
+      width: 130px;
+    }
+    .range-custom button {
+      background: #fff;
+      color: #000;
+      border: none;
+      border-radius: 8px;
+      padding: 5px 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Desktop grid */
+    @media (min-width: 900px) {
+      .dash-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+      }
+      .dash-full { grid-column: 1 / -1; }
+    }
+
+    /* Mobile */
+    @media (max-width: 768px) {
+      .sidebar { display: none; }
+      .main { margin-left: 0; padding: 1rem; }
+      .mobile-nav {
+        display: flex !important;
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: #111;
+        border-top: 1px solid #1f1f1f;
+        z-index: 100;
+        padding: 8px 0 12px;
+      }
+      body { padding-bottom: 70px; }
+    }
+    .mobile-nav { display: none; }
+    .mobile-nav a {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      color: #666;
+      text-decoration: none;
+      font-size: 0.65rem;
+    }
+    .mobile-nav a.active { color: #fff; }
+    .mobile-nav .icon { font-size: 1.2rem; }
+
+    .page-title {
+      font-size: 1.3rem;
+      font-weight: 600;
+      color: #fff;
+      margin-bottom: 1.5rem;
+    }
+  </style>
 </head>
 <body>
 
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem">
-  <h1>📊 Dashboard</h1>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
-    <a href="/" style="color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">+ Add</a>
-    <a href="/debts" style="color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">💸 Debts</a>
-    <a href="/calculator" style="color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">🧮 Calc</a>
-    <a id="adminLink" href="/admin" style="display:none;color:#aaa;font-size:0.85rem;text-decoration:none;padding:6px 12px;background:#1a1a1a;border-radius:8px">⚙️ Admin</a>
-    <button class="add-btn" style="font-size:0.8rem;padding:6px 12px;background:#2a2a2a;color:#aaa" onclick="logout()">Logout</button>
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="sidebar-logo">💸 Expenses</div>
+    <div class="sidebar-user" id="sidebarUser"></div>
+
+    <a href="/dashboard" class="nav-link active"><span class="icon">📊</span> Dashboard</a>
+    <a href="/" class="nav-link"><span class="icon">➕</span> Add Expense</a>
+    <a href="/debts" class="nav-link"><span class="icon">💰</span> Debts</a>
+    <a href="/calculator" class="nav-link"><span class="icon">🧮</span> Calculator</a>
+
+    <div class="sidebar-divider"></div>
+
+    <a id="adminLink" href="/admin" class="nav-link" style="display:none"><span class="icon">⚙️</span> Admin</a>
+
+    <div class="sidebar-bottom">
+      <button class="nav-link" onclick="logout()"><span class="icon">🚪</span> Logout</button>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+    <div class="page-title">Dashboard</div>
+
+    <!-- Time range filter -->
+    <div class="range-row">
+      <span class="range-pill active" data-range="month" onclick="setRange(this, 'month')">This month</span>
+      <span class="range-pill" data-range="week" onclick="setRange(this, 'week')">This week</span>
+      <span class="range-pill" data-range="year" onclick="setRange(this, 'year')">This year</span>
+      <span class="range-pill" data-range="all" onclick="setRange(this, 'all')">All time</span>
+      <div class="range-custom">
+        <input type="date" id="dateFrom" />
+        <span style="color:#555">→</span>
+        <input type="date" id="dateTo" />
+        <button onclick="applyCustomRange()">Go</button>
+      </div>
+    </div>
+
+    <!-- Cards -->
+    <div class="cards dash-full" style="margin-bottom:1rem">
+      <div class="card">
+        <div class="card-label" id="totalLabel">This month</div>
+        <div class="card-value" id="monthTotal">₱0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Last month</div>
+        <div class="card-value" id="lastMonth">₱0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Weekly avg</div>
+        <div class="card-value" id="weeklyAvg">₱0</div>
+      </div>
+      <div class="card">
+        <div class="card-label">Top category</div>
+        <div class="card-value" id="topCategory">—</div>
+      </div>
+    </div>
+
+    <div class="dash-grid">
+      <!-- Left column -->
+      <div>
+        <div class="chart-box">
+          <h2>By category</h2>
+          <canvas id="categoryChart" height="200"></canvas>
+        </div>
+        <div class="chart-box">
+          <h2>This month vs last month</h2>
+          <canvas id="compareChart" height="100"></canvas>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div>
+        <div class="chart-box">
+          <h2>Daily spending</h2>
+          <canvas id="dailyChart" height="200"></canvas>
+        </div>
+      </div>
+
+      <!-- Full width expense list -->
+      <div class="dash-full list-box">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px">
+          <h2 style="margin:0">Expenses</h2>
+          <span style="font-size:0.8rem;color:#555" id="expenseCount"></span>
+        </div>
+
+        <input type="text" id="searchInput" placeholder="🔍 Search merchant or note..."
+          style="width:100%;margin-bottom:10px;background:#2a2a2a;border:1px solid #333;border-radius:8px;padding:8px 14px;color:#fff;font-size:0.9rem;outline:none"
+          oninput="filterExpenses()" />
+
+        <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px" id="filterPills">
+          <span class="cat-pill selected" style="color:#fff;border-color:#fff" data-cat="" onclick="selectFilter(this, '')">All</span>
+          <span class="cat-pill" style="color:#f97316" data-cat="food" onclick="selectFilter(this, 'food')">food</span>
+          <span class="cat-pill" style="color:#3b82f6" data-cat="transport" onclick="selectFilter(this, 'transport')">transport</span>
+          <span class="cat-pill" style="color:#8b5cf6" data-cat="utilities" onclick="selectFilter(this, 'utilities')">utilities</span>
+          <span class="cat-pill" style="color:#ec4899" data-cat="shopping" onclick="selectFilter(this, 'shopping')">shopping</span>
+          <span class="cat-pill" style="color:#22c55e" data-cat="health" onclick="selectFilter(this, 'health')">health</span>
+          <span class="cat-pill" style="color:#eab308" data-cat="entertainment" onclick="selectFilter(this, 'entertainment')">entertainment</span>
+          <span class="cat-pill" style="color:#888" data-cat="other" onclick="selectFilter(this, 'other')">other</span>
+        </div>
+
+        <div id="expenseList"><div class="loading">Loading...</div></div>
+      </div>
+    </div>
   </div>
 </div>
 
-<div class="cards" style="grid-template-columns:repeat(2,1fr)">
-  <div class="card">
-    <div class="card-label">This month</div>
-    <div class="card-value" id="monthTotal">₱0</div>
-  </div>
-  <div class="card">
-    <div class="card-label">Last month</div>
-    <div class="card-value" id="lastMonth">₱0</div>
-  </div>
-  <div class="card">
-    <div class="card-label">Weekly avg</div>
-    <div class="card-value" id="weeklyAvg">₱0</div>
-  </div>
-  <div class="card">
-    <div class="card-label">Top category</div>
-    <div class="card-value" id="topCategory">—</div>
-  </div>
-</div>
+<!-- Mobile bottom nav -->
+<nav class="mobile-nav">
+  <a href="/dashboard" class="active"><span class="icon">📊</span>Dashboard</a>
+  <a href="/"><span class="icon">➕</span>Add</a>
+  <a href="/debts"><span class="icon">💰</span>Debts</a>
+  <a href="/calculator"><span class="icon">🧮</span>Calc</a>
+</nav>
 
-<div class="chart-box">
-  <h2>This month by category</h2>
-  <canvas id="categoryChart" height="160"></canvas>
-</div>
-
-<div class="chart-box">
-  <h2>Daily spending this month</h2>
-  <canvas id="dailyChart" height="160"></canvas>
-</div>
-
-<div class="chart-box">
-  <h2>This month vs last month</h2>
-  <canvas id="compareChart" height="120"></canvas>
-</div>
-
-<div class="list-box">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px">
-    <h2 style="margin:0">Recent expenses</h2>
-    <span style="font-size:0.8rem;color:#555" id="expenseCount"></span>
-  </div>
-
-  <!-- Search -->
-  <input type="text" id="searchInput" placeholder="🔍 Search merchant or note..." 
-    style="width:100%;margin-bottom:10px;background:#2a2a2a;border:1px solid #333;border-radius:8px;padding:8px 14px;color:#fff;font-size:0.9rem;outline:none"
-    oninput="filterExpenses()" />
-
-  <!-- Category filter pills -->
-  <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px" id="filterPills">
-    <span class="cat-pill selected" style="color:#fff;border-color:#fff" data-cat="" onclick="selectFilter(this, '')">All</span>
-    <span class="cat-pill" style="color:#f97316" data-cat="food" onclick="selectFilter(this, 'food')">food</span>
-    <span class="cat-pill" style="color:#3b82f6" data-cat="transport" onclick="selectFilter(this, 'transport')">transport</span>
-    <span class="cat-pill" style="color:#8b5cf6" data-cat="utilities" onclick="selectFilter(this, 'utilities')">utilities</span>
-    <span class="cat-pill" style="color:#ec4899" data-cat="shopping" onclick="selectFilter(this, 'shopping')">shopping</span>
-    <span class="cat-pill" style="color:#22c55e" data-cat="health" onclick="selectFilter(this, 'health')">health</span>
-    <span class="cat-pill" style="color:#eab308" data-cat="entertainment" onclick="selectFilter(this, 'entertainment')">entertainment</span>
-    <span class="cat-pill" style="color:#888" data-cat="other" onclick="selectFilter(this, 'other')">other</span>
-  </div>
-
-  <div id="expenseList"><div class="loading">Loading...</div></div>
-</div>
-
-<script src="/static/app.js"></script>
+<script src="/static/app.js?v=3"></script>
 <script>
 async function logout() {
   await fetch('/api/logout', { method: 'POST' });

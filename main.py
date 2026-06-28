@@ -187,13 +187,32 @@ async def get_expenses(
     limit: int = 100,
     category: str | None = None,
     search: str | None = None,
+    range: str = "month",
+    date_from: str | None = None,
+    date_to: str | None = None,
     user=Depends(get_current_user)
 ):
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    query = "SELECT * FROM expenses WHERE status='done' AND user_id = %s"
-    params = [user["id"]]
+    if date_from and date_to:
+        date_filter = "date BETWEEN %s AND %s"
+        date_params = [date_from, date_to]
+    elif range == "week":
+        date_filter = "DATE_TRUNC('week', date) = DATE_TRUNC('week', CURRENT_DATE)"
+        date_params = []
+    elif range == "year":
+        date_filter = "DATE_TRUNC('year', date) = DATE_TRUNC('year', CURRENT_DATE)"
+        date_params = []
+    elif range == "all":
+        date_filter = "1=1"
+        date_params = []
+    else:
+        date_filter = "DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)"
+        date_params = []
+
+    query = f"SELECT * FROM expenses WHERE status='done' AND user_id = %s AND {date_filter}"
+    params = [user["id"]] + date_params
 
     if category:
         query += " AND category = %s"
@@ -213,57 +232,88 @@ async def get_expenses(
     return list(rows)
 
 @app.get("/api/summary")
-async def get_summary(user=Depends(get_current_user)):
+async def get_summary(
+    range: str = "month",
+    date_from: str | None = None,
+    date_to: str | None = None,
+    user=Depends(get_current_user)):
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute("""
+
+    # Build date filter
+    if date_from and date_to:
+        date_filter = "date BETWEEN %s AND %s"
+        date_params = [date_from, date_to]
+    elif range == "week":
+        date_filter = "DATE_TRUNC('week', date) = DATE_TRUNC('week', CURRENT_DATE)"
+        date_params = []
+    elif range == "year":
+        date_filter = "DATE_TRUNC('year', date) = DATE_TRUNC('year', CURRENT_DATE)"
+        date_params = []
+    else:  # month (default)
+        date_filter = "DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)"
+        date_params = []
+
+    cur.execute(f"""
         SELECT category, SUM(amount) as total
         FROM expenses
-        WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
-        AND status = 'done' AND user_id = %s
+        WHERE {date_filter} AND status = 'done' AND user_id = %s
         GROUP BY category ORDER BY total DESC
-    """, (user["id"],))
+    """, date_params + [user["id"]])
     by_category = cur.fetchall()
 
-    cur.execute("""
+    cur.execute(f"""
         SELECT
             (SELECT COALESCE(SUM(amount), 0) FROM expenses
-             WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
-             AND status = 'done' AND user_id = %s)
+             WHERE {date_filter} AND status = 'done' AND user_id = %s)
             +
             (SELECT COALESCE(SUM(original_amount), 0) FROM debts
-             WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
-             AND type = 'owe' AND user_id = %s)
+             WHERE {date_filter} AND type = 'owe' AND user_id = %s)
         AS total
-    """, (user["id"], user["id"]))
+    """, date_params + [user["id"]] + date_params + [user["id"]])
     monthly_total = cur.fetchone()
     cur.close()
     conn.close()
     return {"by_category": list(by_category), "monthly_total": monthly_total["total"] or 0}
 
 @app.get("/api/stats")
-async def get_stats(user=Depends(get_current_user)):
+async def get_stats(
+    range: str = "month",
+    date_from: str | None = None,
+    date_to: str | None = None,
+    user=Depends(get_current_user)):
     conn = get_db()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
 
-    cur.execute("""
+    if date_from and date_to:
+        date_filter = "date BETWEEN %s AND %s"
+        date_params = [date_from, date_to]
+    elif range == "week":
+        date_filter = "DATE_TRUNC('week', date) = DATE_TRUNC('week', CURRENT_DATE)"
+        date_params = []
+    elif range == "year":
+        date_filter = "DATE_TRUNC('year', date) = DATE_TRUNC('year', CURRENT_DATE)"
+        date_params = []
+    else:
+        date_filter = "DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)"
+        date_params = []
+
+    cur.execute(f"""
         SELECT DATE(date) as day, SUM(amount) as total
         FROM expenses
-        WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
-        AND status = 'done' AND user_id = %s
+        WHERE {date_filter} AND status = 'done' AND user_id = %s
         GROUP BY DATE(date) ORDER BY day ASC
-    """, (user["id"],))
+    """, date_params + [user["id"]])
     daily = cur.fetchall()
 
-    cur.execute("""
+    cur.execute(f"""
         SELECT AVG(weekly_total) as weekly_avg FROM (
             SELECT DATE_TRUNC('week', date) as week, SUM(amount) as weekly_total
             FROM expenses
-            WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
-            AND status = 'done' AND user_id = %s
+            WHERE {date_filter} AND status = 'done' AND user_id = %s
             GROUP BY week
         ) w
-    """, (user["id"],))
+    """, date_params + [user["id"]])
     weekly_avg = cur.fetchone()
 
     cur.execute("""
@@ -279,17 +329,15 @@ async def get_stats(user=Depends(get_current_user)):
     """, (user["id"], user["id"]))
     last_month = cur.fetchone()
 
-    cur.execute("""
+    cur.execute(f"""
         SELECT
             (SELECT COALESCE(SUM(amount), 0) FROM expenses
-             WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
-             AND status = 'done' AND user_id = %s)
+             WHERE {date_filter} AND status = 'done' AND user_id = %s)
             +
             (SELECT COALESCE(SUM(original_amount), 0) FROM debts
-             WHERE DATE_TRUNC('month', date) = DATE_TRUNC('month', CURRENT_DATE)
-             AND type = 'owe' AND user_id = %s)
+             WHERE {date_filter} AND type = 'owe' AND user_id = %s)
         AS total
-    """, (user["id"], user["id"]))
+    """, date_params + [user["id"]] + date_params + [user["id"]])
     this_month = cur.fetchone()
 
     cur.close()

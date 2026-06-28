@@ -10,12 +10,19 @@ let compareChart = null;
 let activeCategory = '';
 let allExpenses = [];
 
+let currentRange = 'month';
+let customFrom = null;
+let customTo = null;
+
 async function checkAuth() {
   const res = await fetch('/api/me');
   if (res.status === 401) { window.location.href = '/login'; return; }
   const data = await res.json();
   if (data.is_admin && document.getElementById('adminLink')) {
-    document.getElementById('adminLink').style.display = 'inline-block';
+    document.getElementById('adminLink').style.display = 'flex';
+  }
+  if (document.getElementById('sidebarUser')) {
+    document.getElementById('sidebarUser').textContent = `👤 ${data.username}`;
   }
 }
 checkAuth();
@@ -189,11 +196,39 @@ function formatDate(dateStr) {
   return d.toLocaleDateString('en-PH', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
 }
 
+function setRange(el, range) {
+  currentRange = range;
+  customFrom = null;
+  customTo = null;
+  document.querySelectorAll('.range-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  loadData();
+}
+
+function applyCustomRange() {
+  const from = document.getElementById('dateFrom')?.value;
+  const to = document.getElementById('dateTo')?.value;
+  if (!from || !to) return;
+  customFrom = from;
+  customTo = to;
+  currentRange = 'custom';
+  document.querySelectorAll('.range-pill').forEach(p => p.classList.remove('active'));
+  loadData();
+}
+
+function buildRangeParams() {
+  if (customFrom && customTo) {
+    return `date_from=${customFrom}&date_to=${customTo}`;
+  }
+  return `range=${currentRange}`;
+}
+
 async function loadData() {
+  const rp = buildRangeParams();
   const [expenses, summary, stats] = await Promise.all([
-    fetch('/api/expenses').then(r => r.json()),
-    fetch('/api/summary').then(r => r.json()),
-    fetch('/api/stats').then(r => r.json())
+    fetch(`/api/expenses?${rp}`).then(r => r.json()),
+    fetch(`/api/summary?${rp}`).then(r => r.json()),
+    fetch(`/api/stats?${rp}`).then(r => r.json())
   ]);
 
   // Cards
