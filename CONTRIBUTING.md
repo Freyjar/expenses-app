@@ -13,7 +13,13 @@ git clone git@github.com:Freyjar/expenses-app.git
 cd expenses-app
 ```
 
-### 2. Start the app
+### 2.1 Set up environment
+```bash
+cp .env.example .env
+```
+The default values in `.env.example` work ot of the box with Docker - no changes needed
+
+### 2.2 Start the app
 ```bash
 docker compose up --build
 ```
@@ -22,10 +28,9 @@ First run takes a minute to build. After that:
 - App: http://localhost:8000
 - DB is auto-created with all tables
 
-### 3. Create your local admin user
-Open a new terminal while docker is running:
+### 4. Create your local admin user
 ```bash
-docker compose exec app python create_user.py
+docker compose exec app python setup_user.py
 ```
 
 Enter any username and password — this is just for local testing.
