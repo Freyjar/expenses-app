@@ -6,7 +6,7 @@ services:
     environment:
       DB_HOST: db
       DB_NAME: expensesdb
-      DB_USER: expensesuser
+      DB_USER: expenseuser
       DB_PASSWORD: localpassword
       DB_PORT: 5432
     depends_on:
