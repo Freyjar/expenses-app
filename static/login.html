@@ -1,49 +1,73 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login</title>
-  <link rel="stylesheet" href="/static/style.css">
-  <style>
-    body { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
-    .login-box { background: #1a1a1a; border-radius: 16px; padding: 2rem; width: 100%; max-width: 360px; display: flex; flex-direction: column; gap: 12px; }
-    h2 { color: #fff; font-size: 1.3rem; margin-bottom: 0.5rem; }
-    .err { color: #ef4444; font-size: 0.85rem; min-height: 20px; }
-  </style>
-</head>
-<body>
-<div class="login-box">
-  <h2>💸 Expenses</h2>
-  <input type="text" id="username" placeholder="Username" />
-  <input type="password" id="password" placeholder="Password" />
-  <button class="add-btn" onclick="login()">Login</button>
-  <div class="err" id="err"></div>
-</div>
-<script>
-async function login() {
-  const username = document.getElementById('username').value.trim();
-  const password = document.getElementById('password').value;
-  const err = document.getElementById('err');
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <link rel="stylesheet" href="/static/style.css" />
+    <style>
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+      }
+      .login-box {
+        background: #1a1a1a;
+        border-radius: 16px;
+        padding: 2rem;
+        width: 100%;
+        max-width: 360px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      h2 {
+        color: #fff;
+        font-size: 1.3rem;
+        margin-bottom: 0.5rem;
+      }
+      .err {
+        color: #ef4444;
+        font-size: 0.85rem;
+        min-height: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-box">
+      <h2>Expenses</h2>
+      <input type="text" id="username" placeholder="Username" />
+      <input type="password" id="password" placeholder="Password" />
+      <button class="add-btn" onclick="login()">Login</button>
+      <div class="err" id="err"></div>
+    </div>
+    <script>
+      async function login() {
+        const username = document.getElementById("username").value.trim();
+        const password = document.getElementById("password").value;
+        const err = document.getElementById("err");
 
-  try {
-    const res = await fetch('/api/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
-    });
-    if (res.ok) {
-      window.location.href = '/';
-    } else {
-      const data = await res.json();
-      err.textContent = data.detail || 'Invalid credentials';
-    }
-  } catch (e) {
-    err.textContent = 'Something went wrong.';
-  }
-}
+        try {
+          const res = await fetch("/api/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ username, password }),
+          });
+          if (res.ok) {
+            window.location.href = "/";
+          } else {
+            const data = await res.json();
+            err.textContent = data.detail || "Invalid credentials";
+          }
+        } catch (e) {
+          err.textContent = "Something went wrong.";
+        }
+      }
 
-document.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-</script>
-</body>
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") login();
+      });
+    </script>
+  </body>
 </html>
