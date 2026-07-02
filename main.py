@@ -9,10 +9,18 @@ import secrets
 from dotenv import load_dotenv
 from datetime import date
 import bcrypt
-
+from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:8081", "https://expenses.freyjar.site"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 def get_db():
     return psycopg2.connect(
