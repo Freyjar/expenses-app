@@ -80,7 +80,14 @@ async def login(input: LoginInput, response: Response):
     cur.close()
     conn.close()
 
-    response.set_cookie("session", token, httponly=True, samesite="lax", max_age=60*60*24*30)
+    response.set_cookie(
+        "session", 
+        token, 
+        httponly=True, 
+        samesite="none",
+        secure=True,
+        max_age=60*60*24*30
+    )
     return {"ok": True}
 
 @app.post("/api/logout")
