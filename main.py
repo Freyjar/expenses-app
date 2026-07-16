@@ -475,4 +475,20 @@ async def admin_page(request: Request):
 async def login_page():
     return FileResponse("static/login.html")
 
+@app.get("/api/merchants/recent")
+async def get_recent_merchants(user=Depends(get_current_user)):
+    conn = get_db()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("""
+        SELECT DISTINCT ON (merchant) merchant, category
+        FROM expenses
+        WHERE user_id = %s AND status = 'done'
+        ORDER BY merchant, created_at DESC
+        LIMIT 12
+    """, (user["id"],))
+    rows = cur.fetchall()
+    cur.close()
+    conn.close()
+    return list(rows)
+
 app.mount("/static", StaticFiles(directory="static"), name="static")

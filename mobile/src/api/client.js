@@ -59,4 +59,6 @@ export const api = {
     const query = new URLSearchParams(params).toString();
     return request(`/api/stats?${query}`);
   },
+
+  getRecentMerchants: () => request('/api/merchants/recent'),
 };
