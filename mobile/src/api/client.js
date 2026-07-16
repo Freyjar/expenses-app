@@ -79,4 +79,6 @@ export const api = {
     request(`/api/debts/${id}`, {
       method: "DELETE",
     }),
+  //merchants
+  getRecentMerchants: () => request("/api/merchants/recent"),
 };
