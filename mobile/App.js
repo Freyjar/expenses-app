@@ -2,9 +2,8 @@ import React from "react";
 import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Text } from "react-native";
 import { AuthProvider, useAuth } from "./src/context/AuthContext";
-
+import { Text, TouchableOpacity } from "react-native";
 import LoginScreen from "./src/screens/LoginScreen";
 import DashboardScreen from "./src/screens/DashboardScreen";
 import AddExpenseScreen from "./src/screens/AddExpenseScreen";
@@ -14,6 +13,14 @@ import CalculatorScreen from "./src/screens/CalculatorScreen";
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
+function LogoutButton() {
+  const { logout } = useAuth();
+  return (
+    <TouchableOpacity onPress={logout} style={{ marginRight: 16 }}>
+      <Text style={{ color: "#888", fontSize: 14 }}>Logout</Text>
+    </TouchableOpacity>
+  );
+}
 function TabNavigator() {
   return (
     <Tab.Navigator
@@ -27,7 +34,10 @@ function TabNavigator() {
       <Tab.Screen
         name="Dashboard"
         component={DashboardScreen}
-        options={{ tabBarIcon: () => <Text>📊</Text> }}
+        options={{
+          tabBarIcon: () => <Text>📊</Text>,
+          headerRight: () => <LogoutButton />,
+        }}
       />
       <Tab.Screen
         name="Add"

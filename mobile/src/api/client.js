@@ -59,4 +59,24 @@ export const api = {
     const query = new URLSearchParams(params).toString();
     return request(`/api/stats?${query}`);
   },
+
+  // Debts
+  getDebts: () => request("/api/debts"),
+
+  addDebt: (data) =>
+    request("/api/debts", {
+      method: "POST",
+      body: JSON.stringify(data),
+    }),
+
+  updateDebt: (id, amount) =>
+    request(`/api/debts/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify({ amount }),
+    }),
+
+  deleteDebt: (id) =>
+    request(`/api/debts/${id}`, {
+      method: "DELETE",
+    }),
 };
