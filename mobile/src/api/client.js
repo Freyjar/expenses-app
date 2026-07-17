@@ -59,7 +59,6 @@ export const api = {
     const query = new URLSearchParams(params).toString();
     return request(`/api/stats?${query}`);
   },
-
   // Debts
   getDebts: () => request("/api/debts"),
 
